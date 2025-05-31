@@ -15,6 +15,24 @@ app.get('/name', (req, res) => {
   res.send('KanapojPM')
 })
 
+app.get('/trans', async (req, res) => {
+  const text = req.query.text
+  if (!text) {
+    return res.status(400).json({ error: 'Missing text parameter' })
+  }
+  try {
+    const response = await axios.get('https://lingva.ml/api/v1/th/en/' + encodeURIComponent(text))
+    res.json({ translation: response.data.translation })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+// ฟังก์ชันแปลข้อความไทยเป็นอังกฤษด้วย Lingva Translate
+async function translateThaiToEnglish(text) {
+  const res = await axios.get('https://lingva.ml/api/v1/th/en/' + encodeURIComponent(text))
+  return res.data.translation
+}
+
 app.post('/linebot', async (req, res) => {
   const events = req.body.events
   if (!events || events.length === 0) {
@@ -29,6 +47,9 @@ app.post('/linebot', async (req, res) => {
       console.log(JSON.stringify(event, null, 2))
       // ตัวอย่าง: ตอบกลับข้อความเดิม
       try {
+        // แปลข้อความไทยเป็นอังกฤษ
+        const translated = await translateThaiToEnglish(userMessage)
+
         await axios.post(
           'https://api.line.me/v2/bot/message/reply',
           {

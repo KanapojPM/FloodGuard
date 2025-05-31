@@ -56,52 +56,8 @@ app.post('/linebot', async (req, res) => {
             replyToken: replyToken,
             messages: [
               {
-                type: 'flex',
-                altText: 'This is a Flex Message',
-                contents: {
-                  type: 'bubble',
-                  hero: {
-                    type: 'image',
-                    url: 'https://cdn.pixabay.com/photo/2024/05/31/18/54/meme-8801100_960_720.png', // URL รูปภาพ
-                    size: 'full',
-                    aspectRatio: '20:13',
-                    aspectMode: 'cover'
-                  },
-                  body: {
-                    type: 'box',
-                    layout: 'vertical',
-                    contents: [
-                      {
-                        type: 'text',
-                        text: 'Flex Message Example',
-                        weight: 'bold',
-                        size: 'xl'
-                      },
-                      {
-                        type: 'text',
-                        text: `คุณพิมพ์ว่า: ${userMessage}`,
-                        margin: 'md',
-                        wrap: true
-                      }
-                    ]
-                  },
-                  footer: {
-                    type: 'box',
-                    layout: 'vertical',
-                    spacing: 'sm',
-                    contents: [
-                      {
-                        type: 'button',
-                        style: 'primary',
-                        action: {
-                          type: 'uri',
-                          label: 'Visit Website',
-                          uri: 'https://www.roblox.com/home'
-                        }
-                      }
-                    ]
-                  }
-                }
+                type: 'text',
+                text: `คุณพิมพ์ว่า: ${translated}`
               }
             ]
           },

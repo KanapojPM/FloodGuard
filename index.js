@@ -7,7 +7,7 @@ const app = express()
 app.use(bodyParser.json())
 
 const LINE_CHANNEL_ACCESS_TOKEN = 'es6rk7DN6x68kYi9n5xKutkmUOl8pKOAUs7k9i2oq1C0cyKT0JCtBr7AdEjr+ZEl3F4Sg8OCfzLcW2GyEDkQJH6a0czKl2NKyVCtUsGXV2aZCEV1i1TgNzYu2S62HEtM1sjAS9Yf2v8SUoV3LUJfewdB04t89/1O/w1cDnyilFU=' // ใส่ token ของคุณ
-//Uab2c05636097d5b84c4d48c54479bab8
+
 app.get('/', (req, res) => {
   res.send('Hello World')
 })
@@ -15,11 +15,6 @@ app.get('/', (req, res) => {
 app.get('/name', (req, res) => {
   res.send('KanapojPM')
 })
-// ฟังก์ชันแปลข้อความไทยเป็นอังกฤษด้วย Lingva Translate
-async function translateThaiToEnglish(text) {
-  const res = await axios.get('https://lingva.ml/api/v1/th/en/' + encodeURIComponent(text))
-  return res.data.translation
-}
 
 app.post('/linebot', async (req, res) => {
   const events = req.body.events
@@ -32,7 +27,6 @@ app.post('/linebot', async (req, res) => {
       const replyToken = event.replyToken
       const userMessage = event.message.text.trim()
 
-      // ตรวจสอบข้อความและ publish MQTT ตามคำสั่ง
       if (userMessage === 'ปิดไฟ') {
         mqttClient.publish('light/status', 'off')
         await axios.post(
@@ -67,29 +61,8 @@ app.post('/linebot', async (req, res) => {
             }
           }
         )
-      } else {
-        // กรณีข้อความอื่นๆ ตอบกลับแบบเดิม
-        try {
-          const translated = await translateThaiToEnglish(userMessage)
-          await axios.post(
-            'https://api.line.me/v2/bot/message/reply',
-            {
-              replyToken: replyToken,
-              messages: [
-                { type: 'text', text: `คุณพิมพ์ว่า: ${translated}` }
-              ]
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
-              }
-            }
-          )
-        } catch (error) {
-          console.error('LINE API error:', error.response?.data || error.message)
-        }
       }
+      // ไม่ต้องตอบกลับกรณีอื่น
     }
   }
   res.status(200).send('OK')
@@ -103,7 +76,7 @@ app.post('/push', async (req, res) => {
   }
 
   try {
-    console.log(`Sending message to userId: ${userId}, message: ${message}`) // <-- Debug log
+    console.log(`Sending message to userId: ${userId}, message: ${message}`)
     await axios.post(
       'https://api.line.me/v2/bot/message/push',
       {
@@ -128,26 +101,24 @@ app.post('/push', async (req, res) => {
 
 // Connect to a broker with username and password
 const mqttClient = mqtt.connect('ssl://98f1689fc70b4e9d9ccbb7f304e038f8.s1.eu.hivemq.cloud:8883', {
-  username: 'KanapojPM', // <-- ใส่ username ที่นี่
-  password: 'Punpun24012'  // <-- ใส่ password ที่นี่
+  username: 'KanapojPM',
+  password: 'Punpun24012'
 })
 
-// When connected
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker')
-
-  // Subscribe to all topics
-  //mqttClient.subscribe('water/test', (err) => {
-  //  if (!err) {
-  //    console.log('Subscribed to all topics')
-  //  }
-  //})
+  // Subscribe to all topics if needed
+  // mqttClient.subscribe('#', (err) => {
+  //   if (!err) {
+  //     console.log('Subscribed to all topics')
+  //   }
+  // })
 })
 
 // Replace USER_ID_HERE with your actual LINE userId
 const LINE_USER_ID = 'Uab2c05636097d5b84c4d48c54479bab8'
 
-// Receive messages
+// Receive messages from MQTT and send to LINE
 mqttClient.on('message', async (topic, message) => {
   const msg = message.toString()
   const text = `MQTT Topic: ${topic}\nMessage: ${msg}`

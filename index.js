@@ -1,6 +1,7 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import axios from 'axios'
+import mqtt from 'mqtt'
 
 const app = express()
 app.use(bodyParser.json())
@@ -13,19 +14,6 @@ app.get('/', (req, res) => {
 
 app.get('/name', (req, res) => {
   res.send('KanapojPM')
-})
-
-app.get('/trans', async (req, res) => {
-  const text = req.query.text
-  if (!text) {
-    return res.status(400).json({ error: 'Missing text parameter' })
-  }
-  try {
-    const response = await axios.get('https://lingva.ml/api/v1/th/en/' + encodeURIComponent(text))
-    res.json({ translation: response.data.translation })
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
 })
 // ฟังก์ชันแปลข้อความไทยเป็นอังกฤษด้วย Lingva Translate
 async function translateThaiToEnglish(text) {
@@ -84,6 +72,7 @@ app.post('/push', async (req, res) => {
   }
 
   try {
+    console.log(`Sending message to userId: ${userId}, message: ${message}`) // <-- Debug log
     await axios.post(
       'https://api.line.me/v2/bot/message/push',
       {
@@ -103,6 +92,54 @@ app.post('/push', async (req, res) => {
   } catch (error) {
     console.error('LINE Push API error:', error.response?.data || error.message)
     res.status(500).json({ error: error.response?.data || error.message })
+  }
+})
+
+// Connect to a broker with username and password
+const mqttClient = mqtt.connect('ssl://98f1689fc70b4e9d9ccbb7f304e038f8.s1.eu.hivemq.cloud:8883', {
+  username: 'KanapojPM', // <-- ใส่ username ที่นี่
+  password: 'Punpun24012'  // <-- ใส่ password ที่นี่
+})
+
+// When connected
+mqttClient.on('connect', () => {
+  console.log('Connected to MQTT broker')
+
+  // Subscribe to all topics
+  mqttClient.subscribe('water/test', (err) => {
+    if (!err) {
+      console.log('Subscribed to all topics')
+    }
+  })
+})
+
+// Replace USER_ID_HERE with your actual LINE userId
+const LINE_USER_ID = 'Uab2c05636097d5b84c4d48c54479bab8'
+
+// Receive messages
+mqttClient.on('message', async (topic, message) => {
+  const msg = message.toString()
+  const text = `MQTT Topic: ${topic}\nMessage: ${msg}`
+
+  try {
+    await axios.post(
+      'https://api.line.me/v2/bot/message/push',
+      {
+        to: LINE_USER_ID,
+        messages: [
+          { type: 'text', text }
+        ]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
+        }
+      }
+    )
+    console.log('Sent MQTT message to LINE user.')
+  } catch (error) {
+    console.error('Error sending MQTT message to LINE:', error.response?.data || error.message)
   }
 })
 

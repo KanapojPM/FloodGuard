@@ -27,26 +27,20 @@ app.post('/linebot', async (req, res) => {
     return res.status(200).send('No events')
   }
 
-  // ประมวลผลข้อความแต่ละ event
   for (const event of events) {
     if (event.type === 'message' && event.message.type === 'text') {
       const replyToken = event.replyToken
-      const userMessage = event.message.text
-      console.log(JSON.stringify(event, null, 2))
-      // ตัวอย่าง: ตอบกลับข้อความเดิม
-      try {
-        // แปลข้อความไทยเป็นอังกฤษ
-        const translated = await translateThaiToEnglish(userMessage)
+      const userMessage = event.message.text.trim()
 
+      // ตรวจสอบข้อความและ publish MQTT ตามคำสั่ง
+      if (userMessage === 'ปิดไฟ') {
+        mqttClient.publish('light/status', 'off')
         await axios.post(
           'https://api.line.me/v2/bot/message/reply',
           {
             replyToken: replyToken,
             messages: [
-              {
-                type: 'text',
-                text: `คุณพิมพ์ว่า: ${translated}`
-              }
+              { type: 'text', text: 'สั่งปิดไฟเรียบร้อย' }
             ]
           },
           {
@@ -56,8 +50,45 @@ app.post('/linebot', async (req, res) => {
             }
           }
         )
-      } catch (error) {
-        console.error('LINE API error:', error.response?.data || error.message)
+      } else if (userMessage === 'เปิดไฟ') {
+        mqttClient.publish('light/status', 'on')
+        await axios.post(
+          'https://api.line.me/v2/bot/message/reply',
+          {
+            replyToken: replyToken,
+            messages: [
+              { type: 'text', text: 'สั่งเปิดไฟเรียบร้อย' }
+            ]
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
+            }
+          }
+        )
+      } else {
+        // กรณีข้อความอื่นๆ ตอบกลับแบบเดิม
+        try {
+          const translated = await translateThaiToEnglish(userMessage)
+          await axios.post(
+            'https://api.line.me/v2/bot/message/reply',
+            {
+              replyToken: replyToken,
+              messages: [
+                { type: 'text', text: `คุณพิมพ์ว่า: ${translated}` }
+              ]
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
+              }
+            }
+          )
+        } catch (error) {
+          console.error('LINE API error:', error.response?.data || error.message)
+        }
       }
     }
   }
@@ -106,11 +137,11 @@ mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker')
 
   // Subscribe to all topics
-  mqttClient.subscribe('water/test', (err) => {
-    if (!err) {
-      console.log('Subscribed to all topics')
-    }
-  })
+  //mqttClient.subscribe('water/test', (err) => {
+  //  if (!err) {
+  //    console.log('Subscribed to all topics')
+  //  }
+  //})
 })
 
 // Replace USER_ID_HERE with your actual LINE userId

@@ -160,13 +160,16 @@ mqttClient.on('connect', () => {
 
 // Replace USER_ID_HERE with your actual LINE userId
 const LINE_USER_ID = 'Uab2c05636097d5b84c4d48c54479bab8'
-
+let lateststatus = 'NORMAL' // Default status
 // Receive messages from MQTT and send to LINE
 mqttClient.on('message', async (topic, message) => {
   const jsonObj = JSON.parse(message.toString());
   let msg;
 
   if (topic === 'water/alarm') {
+    if (lateststatus === jsonObj.status) 
+      return;
+    lateststatus = jsonObj.status; // Update the latest status
     if(jsonObj.status === 'NORMAL') {
       msg = {
         type: 'text',

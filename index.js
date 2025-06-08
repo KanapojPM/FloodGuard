@@ -190,12 +190,12 @@ mqttClient.on('message', async (topic, message) => {
             {
               type: "postback",
               label: "ตัดไฟ",
-              text: "action=cut_power"
+              data: "action=cut_power"
             },
             {
               type: "postback",
               label: "ยกเลิก",
-              text: "action=cancel"
+              data: "action=cancel"
             }
           ]
         }

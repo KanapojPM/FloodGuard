@@ -120,8 +120,14 @@ const LINE_USER_ID = 'Uab2c05636097d5b84c4d48c54479bab8'
 
 // Receive messages from MQTT and send to LINE
 mqttClient.on('message', async (topic, message) => {
-  const msg = message.toString()
-  const text = `MQTT Topic: ${topic}\nMessage: ${msg}`
+  const jsonObj = JSON.parse(message.toString());
+  let text
+
+  if (topic === 'water/alarm') {
+    text = `🚨 แจ้งเตือนน้ำท่วม! ข้อความ: ${jsonObj.status} เมื่อ ${jsonObj.timestamp}`
+  } else {
+    text = `MQTT Topic: ${topic}\nMessage: ${message.toString()}`
+  }
 
   try {
     await axios.post(

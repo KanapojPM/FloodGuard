@@ -126,10 +126,44 @@ const LINE_USER_ID = 'Uab2c05636097d5b84c4d48c54479bab8'
 // Receive messages from MQTT and send to LINE
 mqttClient.on('message', async (topic, message) => {
   const jsonObj = JSON.parse(message.toString());
-  let text
+  let msg;
 
   if (topic === 'water/alarm') {
-    text = `🚨 แจ้งเตือนน้ำท่วม! ข้อความ: ${jsonObj.status} เมื่อ ${jsonObj.timestamp}`
+    if(jsonObj.status === 'NORMAL') {
+      msg = {
+        type: 'text',
+        text: `✅ สถานะปกติ เมื่อ ${jsonObj.timestamp}`
+      }
+    }
+    if(jsonObj.status === 'WARNING') {
+      msg = {
+        type: 'text',
+        text: `⚠️ แจ้งเตือนน้ำสูงอยู่ในระดับเฝ้าระวัง! เมื่อ ${jsonObj.timestamp}`
+      }
+    }
+    if(jsonObj.status === 'CRITICAL') {
+      msg = {
+        type: 'template',
+        altText: '🚨 แจ้งเตือนน้ำท่วม!',
+        template: {
+          type: "confirm",
+          text: "🚨 แจ้งเตือนน้ำท่วม! คุณต้องการตัดไฟใช่หรือไม่?",
+          actions: [
+            {
+              type: "message",
+              label: "ตัดไฟ",
+              text: "ปิดไฟ"
+            },
+            {
+              type: "message",
+              label: "ยกเลิก",
+              text: "เปิดไฟ"
+            }
+          ]
+        }
+      } 
+    }
+    //text = `🚨 แจ้งเตือนน้ำท่วม! ข้อความ: ${jsonObj.status} เมื่อ ${jsonObj.timestamp}`
   } else {
     text = `MQTT Topic: ${topic}\nMessage: ${message.toString()}`
   }

@@ -113,6 +113,11 @@ mqttClient.on('connect', () => {
   //     console.log('Subscribed to all topics')
   //   }
   // })
+  mqttClient.subscribe('water/alarm', (err) => {
+    if (!err) {
+      console.log('Subscribed to water/alarm topics')
+    }
+  })
 })
 
 // Replace USER_ID_HERE with your actual LINE userId

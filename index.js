@@ -63,6 +63,44 @@ app.post('/linebot', async (req, res) => {
         )
       }
       // ไม่ต้องตอบกลับกรณีอื่น
+    } else if (event.type === 'postback') {
+      const postbackData = event.postback.data
+      const replyToken = event.replyToken
+
+      if (postbackData === 'action=cut_power') {
+        mqttClient.publish('light/status', 'off')
+        await axios.post(
+          'https://api.line.me/v2/bot/message/reply',
+          {
+            replyToken: replyToken,
+            messages: [
+              { type: 'text', text: 'สั่งตัดไฟเรียบร้อย' }
+            ]
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
+            }
+          }
+        )
+      } else if (postbackData === 'action=cancel') {
+        await axios.post(
+          'https://api.line.me/v2/bot/message/reply',
+          {
+            replyToken: replyToken,
+            messages: [
+              { type: 'text', text: 'ยกเลิกการตัดไฟ' }
+            ]
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
+            }
+          }
+        )
+      }
     }
   }
   res.status(200).send('OK')
@@ -150,14 +188,14 @@ mqttClient.on('message', async (topic, message) => {
           text: "🚨 แจ้งเตือนน้ำท่วม! คุณต้องการตัดไฟใช่หรือไม่?",
           actions: [
             {
-              type: "message",
+              type: "postback",
               label: "ตัดไฟ",
-              text: "ปิดไฟ"
+              text: "action=cut_power"
             },
             {
-              type: "message",
+              type: "postback",
               label: "ยกเลิก",
-              text: "เปิดไฟ"
+              text: "action=cancel"
             }
           ]
         }

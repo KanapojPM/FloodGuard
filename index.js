@@ -174,7 +174,7 @@ mqttClient.on('message', async (topic, message) => {
       {
         to: LINE_USER_ID,
         messages: [
-          { type: 'text', text }
+          msg || { type: 'text', text: `Received message on topic ${topic}: ${message.toString()}` }  
         ]
       },
       {
